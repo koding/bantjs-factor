@@ -1,6 +1,6 @@
 {
   "name": "bant-factor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,6 @@
     "stream-combiner": "^0.2.1",
     "deps-topo-sort": "^0.2.1",
     "through2": "^0.6.3",
-    "reversepoint": "^0.2.1",
     "uniq": "^1.0.1"
   },
   "devDependencies": {

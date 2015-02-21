@@ -4,7 +4,6 @@ var debug = require('debug')('bant:factor');
 var Readable = require('stream').Readable;
 var combine = require('stream-combiner');
 var depsTopoSort = require('deps-topo-sort');
-var reverse = require('reversepoint');
 
 module.exports = function (opts) {
   if (!opts) opts = {};
@@ -22,16 +21,17 @@ module.exports = function (opts) {
       var s = new Readable({ objectMode: true });
       s.file = rmap_[row.id] || row.id;
       s._read = function () {};
-      streams[row.id] = s;
-      groups.push(row.id);
+      streams[s.file] = s;
+      groups.push(s.file);
       tr.emit('stream', s);
     }
   }
 
   function write (row, enc, cb) {
     var groups = uniq(groups_[row.id] || []);
-    
-    if ((!files && row.entry) || (files && files[row.id]))
+    var id = rmap_[row.id] || row.id;
+
+    if ((!files && row.entry) || (files && files[id]))
       createStream(row, groups);
 
     if (commons[row.id] || (groups.length > threshold || groups.length === 0)) {
@@ -64,7 +64,18 @@ module.exports = function (opts) {
     this.push(null);
   }
 
-  var dup = combine(depsTopoSort(), reverse(), tr);
+  var data_ = [];
+
+  var dup = combine(depsTopoSort(), 
+      through.obj(function (row, enc, cb) {
+        data_.push(row);
+        cb();
+      }, function () {
+        for (var i = 0, l = data_.length; i < l; i++) {
+          this.push(data_.pop());
+        }
+        this.push(null);
+      }), tr);
 
   tr.on('error', function (err) { dup.emit('error', err); });
   tr.on('stream', function (s) { dup.emit('stream', s); });
